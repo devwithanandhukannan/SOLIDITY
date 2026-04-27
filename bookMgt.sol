@@ -2,44 +2,47 @@
 
 pragma solidity ^0.8.13;
 
-contract Book {
-    string title;
-    address owner;
-    uint price;
-    bool available;
-
-    function setBookAvailable_true()public {
-        if(owner == msg.sender){
-            available = true;
-        }
+contract BookStore {
+    enum Available { True, False}
+    struct Book{
+        string title;
+        address owner;
+        uint price;
+        Available available;
     }
-    function setBookAvailable_false()public {
-        if(owner == msg.sender){
-            available = false;
-        }
+    modifier check_owner (){
+        require(myBook.owner == msg.sender,"invalid user");
+        _;
     }
 
-    function setBook(string memory _title, uint _price) public {
-        title = _title;
-        owner = msg.sender;
-        price = _price;
-        available = false;
+    Book public myBook;
+    function setBookAvailable_true()public check_owner {
+            myBook.available = Available.True;
+    }
+    function setBookAvailable_false()public check_owner {
+            myBook.available = Available.False;
+    }
+    constructor (string memory _title, uint _price) {
+        myBook.title = _title;
+        myBook.owner = msg.sender;
+        myBook.price = _price;
+        myBook.available = Available.False;
     }
 
     function getBook() public view returns ( string memory, address, uint ,bool) { 
-        return (title, owner, price, available);
+        return (myBook.title, myBook.owner, myBook.price, myBook.available == Available.True);
     }
     function buyBook() public payable {
-        if(msg.value >= price && available){
-            (bool success ,)=payable (owner).call{value: price}("");
-            if(success){
-                owner = msg.sender;
-                available = false;
-                uint balance = msg.value - price;
-                if(balance>0){
-                    (success,)=payable (msg.sender).call{value: balance}("");
-                }
-            }
+        require(myBook.available == Available.False, "Book not available");
+        require(msg.value >= myBook.price, "Insufficient payment");
+        (bool success ,)=payable (myBook.owner).call{value: myBook.price}("");
+        require(success, "Payment failed");
+        myBook.owner = msg.sender;
+        myBook.available = Available.False;
+        
+        uint balance = msg.value - myBook.price;
+        if(balance>0){
+            (success,)=payable (msg.sender).call{value: balance}("");
+        }
         }
     }
-}
