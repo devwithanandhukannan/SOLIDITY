@@ -21,4 +21,9 @@ contract Booklist is Token{
         changeOwner(_bookId,msg.sender);
     }
 
+    function changeToken(uint token_id) public payable  override {
+        require(books[token_id].price == msg.value, "Price is not correct");
+        changeOwner(token_id,msg.sender);
+    }
+
 }
