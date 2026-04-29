@@ -13,4 +13,8 @@ contract Token {
     function findUser(uint user_id) public view returns (address) {
         return Data[user_id];
     }
+
+    function changeOwner(uint user_id, address new_address) public {
+        Data[user_id] = new_address;
+    }
 }
